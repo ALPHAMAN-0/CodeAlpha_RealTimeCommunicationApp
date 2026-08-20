@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // lib.DOM is required only because @rtc/crypto's WebCrypto types come from
+    // it (the seed script encrypts demo data exactly as a client would).
+    // Node 22 provides those globals at runtime; no browser API is used here.
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

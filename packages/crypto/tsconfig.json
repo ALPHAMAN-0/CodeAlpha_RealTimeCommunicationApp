@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // lib.DOM is here for the WebCrypto TYPES only (CryptoKey, CryptoKeyPair,
+    // SubtleCrypto) — @types/node declares those as values, not types, so they
+    // cannot be used in type position. The package's public API still avoids
+    // Blob/File so it stays usable from Node, where the seed script runs it.
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

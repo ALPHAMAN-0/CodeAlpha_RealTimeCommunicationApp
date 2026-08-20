@@ -1,0 +1,12 @@
+{
+  "name": "@rtc/crypto",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@rtc/shared": "workspace:*",
+    "hash-wasm": "^4.12.0"
+  }
+}

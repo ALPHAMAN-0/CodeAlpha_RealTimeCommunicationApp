@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/*
+ * Tailwind v4 is CSS-first: the design tokens live here, not in a
+ * tailwind.config.js. Deliberately no runtime CSS-in-JS anywhere in this app —
+ * styled-components and emotion inject inline <style> elements, which would
+ * force 'unsafe-inline' into style-src and give away a meaningful chunk of
+ * what the CSP is for.
+ */
+@theme {
+  --color-ink-950: #070a14;
+  --color-ink-900: #0b1020;
+  --color-ink-850: #10162b;
+  --color-ink-800: #151c35;
+  --color-ink-700: #1f2947;
+  --color-ink-600: #2b3760;
+  --color-ink-400: #6b7aa8;
+  --color-ink-300: #98a5cc;
+  --color-ink-200: #c3cbe6;
+
+  --color-accent-400: #4dd8e6;
+  --color-accent-500: #22c3d6;
+  --color-accent-600: #0e9fb4;
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #8b5cf6;
+
+  --color-good: #34d399;
+  --color-warn: #fbbf24;
+  --color-bad: #f87171;
+
+  --font-sans: "Inter var", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+
+  --radius-panel: 14px;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, #16224a 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #1a2340 0%, transparent 55%),
+    var(--color-ink-950);
+  color: var(--color-ink-200);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus rings must stay visible: keyboard users navigate the whole app. */
+:focus-visible {
+  outline: 2px solid var(--color-accent-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Scrollbars that do not fight the dark surface. */
+* { scrollbar-width: thin; scrollbar-color: var(--color-ink-600) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--color-ink-600);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@utility panel {
+  background: color-mix(in oklab, var(--color-ink-900) 88%, transparent);
+  border: 1px solid var(--color-ink-700);
+  border-radius: var(--radius-panel);
+  backdrop-filter: blur(12px);
+}
+
+@utility hairline {
+  border-color: color-mix(in oklab, var(--color-ink-600) 70%, transparent);
+}

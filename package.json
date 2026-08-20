@@ -1,0 +1,34 @@
+{
+  "name": "codealpha-rtc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time communication app: E2EE chat, multi-user video calling, screen sharing, file sharing and a collaborative whiteboard.",
+  "packageManager": "pnpm@10.5.1",
+  "engines": { "node": ">=22.12.0" },
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/bootstrap-env.mjs",
+    "dev": "docker compose up -d --wait mongo && pnpm --filter @rtc/server seed:if-empty && concurrently -n server,web -c blue,magenta \"pnpm dev:server\" \"pnpm dev:web\"",
+    "dev:server": "pnpm --filter @rtc/server dev",
+    "dev:web": "pnpm --filter @rtc/web dev",
+    "build": "pnpm --filter @rtc/web build && pnpm --filter @rtc/server build",
+    "seed": "pnpm --filter @rtc/server seed",
+    "seed:reset": "pnpm --filter @rtc/server seed:reset",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "up": "docker compose up --build",
+    "down": "docker compose down",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "^4.1.11",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.8.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.11"
+  }
+}

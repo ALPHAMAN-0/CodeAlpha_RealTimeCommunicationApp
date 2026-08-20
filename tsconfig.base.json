@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // exactOptionalPropertyTypes is deliberately OFF. It interacts badly with
+  // Mongoose 9's deeply-generic FilterQuery/UpdateQuery types, which model
+  // optional fields as `T | null` rather than `T | undefined`. Enabling it
+  // would require a cast at every database call, and casts suppress real
+  // type errors as well as this spurious one. Every other strict flag is on.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "skipLibCheck": true,
+    "noEmit": true
+  }
+}

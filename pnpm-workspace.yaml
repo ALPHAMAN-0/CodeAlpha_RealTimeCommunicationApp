@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# pnpm 10 blocks lifecycle scripts by default. These need theirs to place
+# platform binaries; everything else stays blocked.
+onlyBuiltDependencies:
+  - esbuild
+  - '@tailwindcss/oxide'
+  - mongodb-memory-server

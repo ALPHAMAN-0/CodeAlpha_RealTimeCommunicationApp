@@ -1,0 +1,67 @@
+# Render blueprint — the free deployment target.
+#
+# Why not Vercel: its serverless functions have no long-lived WebSocket
+# connections and its rewrites do not proxy an HTTP upgrade, so Socket.IO
+# cannot run there. A single always-on web service can.
+#
+# Database: MongoDB Atlas M0 (free, 512 MB). Set MONGO_URI in the Render
+# dashboard — it is marked sync:false below so it is never committed.
+#
+# Free-tier honesty for the README: this instance sleeps after ~15 minutes
+# idle, so the first request after a cold start takes 30–50 seconds.
+
+services:
+  - type: web
+    name: cipher-rtc
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_STATIC
+        value: 'true'
+      - key: WEB_DIST_DIR
+        value: /app/web/dist
+      # Render terminates TLS at one proxy hop in front of the container.
+      # Never set this higher than the real hop count: trusting an unvalidated
+      # X-Forwarded-For lets a caller forge the key every rate limit uses.
+      - key: TRUST_PROXY
+        value: '1'
+      - key: COOKIE_SAMESITE
+        value: strict
+      - key: DEMO_MODE
+        value: 'true'
+
+      # Set these once in the dashboard.
+      - key: MONGO_URI
+        sync: false
+      - key: APP_ORIGIN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+      # Generated per environment by Render and never printed.
+      - key: CSRF_KEY
+        generateValue: true
+      - key: PASSWORD_PEPPER
+        generateValue: true
+      - key: DATA_ENCRYPTION_KEY
+        generateValue: true
+      - key: BLIND_INDEX_KEY
+        generateValue: true
+      - key: IP_HASH_KEY
+        generateValue: true
+      - key: ENUM_KEY
+        generateValue: true
+
+      # Ed25519 keypair, base64-encoded PEM. Generate locally with:
+      #   node -e "const{generateKeyPairSync}=require('crypto');const{publicKey,privateKey}=generateKeyPairSync('ed25519');console.log('PRIVATE:',Buffer.from(privateKey.export({type:'pkcs8',format:'pem'})).toString('base64'));console.log('PUBLIC:',Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64'))"
+      - key: JWT_PRIVATE_KEY_B64
+        sync: false
+      - key: JWT_PUBLIC_KEY_B64
+        sync: false
+      - key: JWT_KID
+        value: k1

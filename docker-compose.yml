@@ -1,0 +1,116 @@
+# One command for a grader:
+#
+#   cp .env.example .env && pnpm setup && docker compose up --build
+#
+# Then open http://localhost:8080 and use the one-click demo logins.
+#
+# `pnpm dev` uses only the `mongo` service from this file; Compose v2's
+# --wait blocks on the healthcheck below, so no wait-for script is needed.
+
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    # Loopback ONLY. Publishing to 0.0.0.0 would put an unauthenticated
+    # database on the local network.
+    #
+    # The host port is published solely for `pnpm dev`, where the API runs on
+    # the host rather than in a container. It is configurable because 27017 is
+    # a popular port — if another project already has a MongoDB running, set
+    # MONGO_HOST_PORT in .env instead of stopping their container.
+    ports:
+      - '127.0.0.1:${MONGO_HOST_PORT:-27017}:27017'
+    volumes:
+      - mongo-data:/data/db
+    command: ['--quiet', '--wiredTigerCacheSizeGB', '0.5']
+    healthcheck:
+      # The gate for `depends_on: service_healthy`. Without it the app races
+      # the database on a cold start and dies on first connect.
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # env_file rather than build ARGs: values passed at build time persist in
+    # image layers, which is exactly what you do not want for secrets.
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/rtc
+      APP_ORIGIN: http://localhost:8080
+      ALLOWED_ORIGINS: http://localhost:8080
+      SERVE_STATIC: 'true'
+      WEB_DIST_DIR: /repo/apps/web/dist
+      PORT: '4000'
+      NODE_ENV: production
+      # Pinned rather than inherited: a developer's .env may disable rate
+      # limits for local smoke tests, and env.ts refuses to boot in production
+      # with that set. Overriding here keeps the container correct regardless
+      # of what is in .env.
+      RATE_LIMIT_DISABLED: 'false'
+    ports:
+      - '8080:4000'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  # One-shot, idempotent, gated on the app being ready.
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/rtc
+      APP_ORIGIN: http://localhost:8080
+      ALLOWED_ORIGINS: http://localhost:8080
+      NODE_ENV: production
+      RATE_LIMIT_DISABLED: 'false'
+    command: ['node', 'dist/scripts/seed.js', '--if-empty']
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: 'no'
+
+  # Optional TURN relay: `docker compose --profile turn up`.
+  #
+  # Without it, a peer-to-peer mesh call reveals every participant's IP address
+  # to every other participant. That is inherent to P2P, and the UI says so
+  # rather than hiding it.
+  coturn:
+    image: coturn/coturn:4.6
+    profiles: ['turn']
+    network_mode: host
+    command:
+      - -n
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_STATIC_AUTH_SECRET:-changeme}
+      - --realm=rtc.local
+      - --no-multicast-peers
+      - --no-cli
+      - --no-tlsv1
+      - --no-tlsv1_1
+      - --total-quota=100
+      - --user-quota=12
+      # An open TURN server is an SSRF and port-scan pivot into the internal
+      # network. Deny every private range explicitly.
+      - --denied-peer-ip=0.0.0.0-0.255.255.255
+      - --denied-peer-ip=10.0.0.0-10.255.255.255
+      - --denied-peer-ip=127.0.0.0-127.255.255.255
+      - --denied-peer-ip=169.254.0.0-169.254.255.255
+      - --denied-peer-ip=172.16.0.0-172.31.255.255
+      - --denied-peer-ip=192.168.0.0-192.168.255.255
+
+volumes:
+  mongo-data:
