@@ -2,6 +2,7 @@ import {
   b64uDecode, b64uEncode, createEpoch, decryptFileBytes, encryptFileBytes,
   fromUtf8, importPublicKeys, safetyNumber, utf8,
 } from '@rtc/crypto';
+import { parseFilePayload } from '@rtc/shared';
 import type {
   ConversationDTO, EpochRecord, FilePayload, MessageDTO, ParticipantDTO,
   PresenceDTO, CallPeerDTO,
@@ -110,7 +111,10 @@ export async function decryptAll(conversationId: string, messages: MessageDTO[])
           ...(peerId ? { peerId } : {}),
         });
         if (message.kind === 'file') {
-          const payload = JSON.parse(fromUtf8(plain)) as FilePayload;
+          // Written by another member, so it is untrusted input: a payload
+          // that is not exactly the expected shape is handled like a failed
+          // decryption below, rather than reaching the renderer.
+          const payload = parseFilePayload(fromUtf8(plain));
           useMessages.getState().setPlaintext(
             conversationId, String(message.id), payload.caption ?? '', payload,
           );
@@ -187,7 +191,7 @@ export function installSendConfirmation(userId: string): () => void {
       // bubble renders without a round trip.
       void openMessage({ priv: me().priv, myUserId: userId, message: dto })
         .then((plain) => {
-          const payload = JSON.parse(fromUtf8(plain)) as FilePayload;
+          const payload = parseFilePayload(fromUtf8(plain));
           useMessages.getState().setPlaintext(
             entry.conversationId, ack.messageId, payload.caption ?? '', payload,
           );
