@@ -4,8 +4,6 @@ build/
 coverage/
 *.tsbuildinfo
 
-.env
-.env.local
 .env.*.local
 !.env.example
 
@@ -18,3 +16,4 @@ data/
 uploads/
 .vite/
 .cache/
+config.bat

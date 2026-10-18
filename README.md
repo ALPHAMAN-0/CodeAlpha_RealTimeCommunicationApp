@@ -7,12 +7,25 @@
 ## Architecture / How it Works
 
 ```mermaid
-flowchart LR
-    A[User] --> B[Codealpha Realtimecommunicationapp]
-    B --> C{Logic}
-    C --> D[(Data)]
-    C --> E[Output]
-    D --> C
+flowchart TD
+    WebApp[Web-App] --> WebCrypto[Web-Crypto]
+    WebApp --> WebRealtime[Web-Realtime]
+    WebApp --> WebRTC[Web-RTC]
+    WebApp --> WebWhiteboard[Web-Whiteboard]
+    WebApp --> ServerHTTP[Server-HTTP]
+    WebCrypto --> Crypto[Crypto]
+    WebRealtime --> ServerRealtime[Server-Realtime]
+    WebRTC --> ServerHTTP
+    WebWhiteboard --> ServerRealtime
+    ServerHTTP --> ServerServices[Server-Services]
+    ServerHTTP --> ServerDB[Server-DB]
+    ServerRealtime --> ServerServices
+    ServerRealtime --> ServerHTTP
+    ServerServices --> ServerDB
+    ServerServices --> ServerStorage[Server-Storage]
+    ServerServices --> Crypto
+    ServerServices --> Shared[Shared]
+    Crypto --> Shared
 ```
 
 
