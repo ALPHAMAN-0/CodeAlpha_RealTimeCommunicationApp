@@ -4,6 +4,18 @@
 
 **End-to-end encrypted team chat with multi-user video calling, screen sharing, encrypted file sharing and a collaborative whiteboard.**
 
+## Architecture / How it Works
+
+```mermaid
+flowchart LR
+    A[User] --> B[Codealpha Realtimecommunicationapp]
+    B --> C{Logic}
+    C --> D[(Data)]
+    C --> E[Output]
+    D --> C
+```
+
+
 CodeAlpha Full Stack Internship · Task 4: Real-Time Communication App
 
 `TypeScript` · `React 19` · `Express 5` · `Socket.IO` · `MongoDB` · `WebRTC` · `WebCrypto`
