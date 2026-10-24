@@ -2,6 +2,7 @@ import {
   b64uDecode, b64uEncode, createEpoch, decryptFileBytes, encryptFileBytes,
   fromUtf8, importPublicKeys, safetyNumber, utf8,
 } from '@rtc/crypto';
+import { parseFilePayload } from '@rtc/shared';
 import type {
   ConversationDTO, EpochRecord, FilePayload, MessageDTO, ParticipantDTO,
   PresenceDTO, CallPeerDTO,
@@ -110,7 +111,10 @@ export async function decryptAll(conversationId: string, messages: MessageDTO[])
           ...(peerId ? { peerId } : {}),
         });
         if (message.kind === 'file') {
-          const payload = JSON.parse(fromUtf8(plain)) as FilePayload;
+          // Written by another member, so it is untrusted input: a payload
+          // that is not exactly the expected shape is handled like a failed
+          // decryption below, rather than reaching the renderer.
+          const payload = parseFilePayload(fromUtf8(plain));
           useMessages.getState().setPlaintext(
             conversationId, String(message.id), payload.caption ?? '', payload,
           );
@@ -187,7 +191,7 @@ export function installSendConfirmation(userId: string): () => void {
       // bubble renders without a round trip.
       void openMessage({ priv: me().priv, myUserId: userId, message: dto })
         .then((plain) => {
-          const payload = JSON.parse(fromUtf8(plain)) as FilePayload;
+          const payload = parseFilePayload(fromUtf8(plain));
           useMessages.getState().setPlaintext(
             entry.conversationId, ack.messageId, payload.caption ?? '', payload,
           );
@@ -237,6 +241,10 @@ export async function sendFile(
 
   const payload: FilePayload = {
     attachmentId: attachmentId as never,
+    // The id the chunks were just sealed under. It has to travel with the
+    // key: the receiver rebuilds every chunk's AAD from it, and the attachment
+    // id cannot stand in, because the server assigned that after encryption.
+    fileId,
     // Filename and MIME travel INSIDE the ciphertext: "Q3_layoffs.xlsx" leaks
     // plenty on its own, so the server never sees either.
     filename: file.name,
@@ -264,7 +272,9 @@ export async function sendFile(
  * navigation would be unauthenticated, and routing bytes through a blob keeps
  * attacker-supplied content off the app's own origin entirely.
  */
-export async function downloadAttachment(payload: FilePayload): Promise<{ url: string; revoke: () => void }> {
+export async function downloadAttachment(
+  payload: FilePayload,
+): Promise<{ url: string; bytes: Uint8Array; revoke: () => void }> {
   const cipher = await fetchAttachment(String(payload.attachmentId));
   const plain = await decryptFileBytes(cipher, b64uDecode(payload.fileKey), {
     fileId: extractFileId(payload),
@@ -274,7 +284,9 @@ export async function downloadAttachment(payload: FilePayload): Promise<{ url: s
   });
   const blob = new Blob([plain as unknown as BlobPart], { type: payload.mime });
   const url = URL.createObjectURL(blob);
-  return { url, revoke: () => URL.revokeObjectURL(url) };
+  // The decrypted bytes are returned alongside the URL so a caller that wants
+  // to inspect them does not have to read the blob: URL back.
+  return { url, bytes: plain, revoke: () => URL.revokeObjectURL(url) };
 }
 
 /**
@@ -284,7 +296,7 @@ export async function downloadAttachment(payload: FilePayload): Promise<{ url: s
  * older payloads that predate the explicit field fall back to the attachment
  * id, which is what they used.
  */
-const extractFileId = (payload: FilePayload & { fileId?: string }): string =>
+const extractFileId = (payload: FilePayload): string =>
   payload.fileId ?? String(payload.attachmentId);
 
 export async function markRead(conversationId: string, seq: number): Promise<void> {

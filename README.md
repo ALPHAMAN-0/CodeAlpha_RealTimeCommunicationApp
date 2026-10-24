@@ -76,7 +76,7 @@ Then open http://localhost:5173. The API runs on :4000 and Vite proxies to it.
 
 ```bash
 pnpm typecheck      # all four packages
-pnpm test           # 178 tests
+pnpm test           # 217 tests
 pnpm test --project unit          # fast, no I/O
 pnpm test --project integration   # real HTTP + Socket.IO + in-memory Mongo
 ```

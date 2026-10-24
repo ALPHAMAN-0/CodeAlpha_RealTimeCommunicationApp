@@ -92,10 +92,31 @@ services:
     image: coturn/coturn:4.6
     profiles: ['turn']
     network_mode: host
+    environment:
+      # Deliberately no default. A relay started with a well-known secret lets
+      # anyone mint TURN credentials for it, so a missing value must stop the
+      # relay rather than fall back to one.
+      TURN_STATIC_AUTH_SECRET: ${TURN_STATIC_AUTH_SECRET:-}
+    # The check runs inside the container, at start. A `${VAR:?}` in this file
+    # would be evaluated by every `docker compose` command — including the
+    # default profile, which never starts this service — and break the
+    # one-command quickstart for everyone who does not use TURN.
+    #
+    # 16 characters is the same floor env.ts applies to this variable, so the
+    # relay never accepts a secret the API would refuse to mint credentials with.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ "$${#TURN_STATIC_AUTH_SECRET}" -lt 16 ]; then
+          echo 'TURN_STATIC_AUTH_SECRET must be set to at least 16 characters (generate one with: openssl rand -base64 32). Refusing to start the relay with a missing or default secret.' >&2
+          exit 1
+        fi
+        exec turnserver "$$@" "--static-auth-secret=$$TURN_STATIC_AUTH_SECRET"
+      - turnserver
     command:
       - -n
       - --use-auth-secret
-      - --static-auth-secret=${TURN_STATIC_AUTH_SECRET:-changeme}
       - --realm=rtc.local
       - --no-multicast-peers
       - --no-cli

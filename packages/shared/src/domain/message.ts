@@ -51,6 +51,15 @@ export interface MessageDTO {
 /** The plaintext inside a `kind: 'file'` envelope. Never touches the server. */
 export interface FilePayload {
   attachmentId: AttachmentId;
+  /**
+   * The id every chunk's AAD was sealed under.
+   *
+   * Minted by the sender BEFORE the upload, so it is not `attachmentId` —
+   * that one is assigned by the server afterwards. The receiver cannot rebuild
+   * the chunk AAD without it. Optional only so a payload written before the
+   * field existed still parses.
+   */
+  fileId?: string;
   filename: string;
   mime: string;
   plainSize: number;

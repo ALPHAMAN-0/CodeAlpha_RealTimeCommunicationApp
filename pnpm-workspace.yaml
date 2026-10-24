@@ -8,3 +8,9 @@ onlyBuiltDependencies:
   - esbuild
   - '@tailwindcss/oxide'
   - mongodb-memory-server
+
+# concurrently pins shell-quote to exactly 1.9.0, which is affected by
+# GHSA-pqg4-j6r4-53mv, and no concurrently release carries a patched pin yet.
+# Drop this once concurrently depends on shell-quote >= 1.11.0.
+overrides:
+  shell-quote: 1.11.0

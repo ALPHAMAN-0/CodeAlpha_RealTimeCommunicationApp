@@ -304,7 +304,7 @@ function FileBubble({ payload, caption }: { payload: FilePayload; caption: strin
     setBusy(true);
     setWarning(undefined);
     try {
-      const { url, revoke } = await downloadAttachment(payload);
+      const { url, bytes, revoke } = await downloadAttachment(payload);
 
       /**
        * Magic-byte sniffing AFTER decryption.
@@ -314,10 +314,14 @@ function FileBubble({ payload, caption }: { payload: FilePayload; caption: strin
        * of E2EE attachments is that no antivirus can scan them, so the least
        * we can do is tell the user when a file's real type disagrees with its
        * name.
+       *
+       * The bytes come straight from the decryptor. Reading them back with
+       * `fetch(url)` only works on the dev server: the production policy is
+       * `connect-src 'self'`, which does not cover a blob: URL, so the fetch
+       * was refused and the download below never started.
        */
       const { fileTypeFromBuffer } = await import('file-type');
-      const head = await fetch(url).then((r) => r.arrayBuffer());
-      const sniffed = await fileTypeFromBuffer(new Uint8Array(head.slice(0, 4100)));
+      const sniffed = await fileTypeFromBuffer(bytes.subarray(0, 4100));
       const ext = payload.filename.split('.').pop()?.toLowerCase();
       if (sniffed && ext && sniffed.ext !== ext) {
         setWarning(`This file is named .${ext} but its contents are actually ${sniffed.ext}.`);
