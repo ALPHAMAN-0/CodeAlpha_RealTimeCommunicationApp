@@ -28,7 +28,9 @@
     "@types/node": "^24.10.1",
     "@vitest/coverage-v8": "^4.1.11",
     "concurrently": "^10.0.5",
+    "dotenv": "^8.2.0",
     "eslint": "^10.8.1",
+    "node-fetch": "^3.3.2",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.11"
